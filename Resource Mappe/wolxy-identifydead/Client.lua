@@ -112,7 +112,7 @@ function IdentifyDead(Coords2, Player, Distance)
     local Ped = PlayerPedId()
     local Coords = GetEntityCoords(Ped)
 
-    TriggerServerEvent('Wolxy:IdentifyDead:', ...)
+    TriggerServerEvent('Wolxy:IdentifyDead:Identifying')
 
     TaskAchieveHeading(Ped, math.deg(math.atan(Coords.x - Coords2.x, Coords.y - Coords2.y)) % 360, 1500)
 
@@ -140,6 +140,8 @@ function IdentifyDead(Coords2, Player, Distance)
     Wait(5150)
 
     ClearPedTasks(Ped)
+
+    TriggerServerEvent('Wolxy:IdentifyDead:Identify', Player)
 end
 
 

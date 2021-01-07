@@ -20,7 +20,7 @@ Her er der instruktioner til at installere og konfigurere.
 3. Tilføj "**start wolxy-identifydead**" i din servers "**server.cfg**" på en linje som er **efter "start vrp"**.
 
 ### Konfiguration
-[Du kan se mere info om konfiguration her.](Dokumentation/Konfiguration.md)
+Du kan se en masse information om konfiguration i Config/Config-Shared.lua. Bare tjek kommentarene.
 
 ## Licens
 Dette script er licenseret under MIT licensen. Du kan se [LICENSE filen](LICENSE) for at få mere information.

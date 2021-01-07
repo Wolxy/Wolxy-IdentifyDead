@@ -7,6 +7,8 @@ local Proxy = module('vrp', 'lib/Proxy')
 vRP = Proxy.getInterface('vRP')
 vRPclient = Tunnel.getInterface('vRP', ResourceName)
 
+MySQL = module("vrp_mysql", "MySQL")
+
 if Config.General.CheckForUpdates then
     PerformHttpRequest('https://raw.githubusercontent.com/Wolxy/Wolxy-IdentifyDead/development/Version.md', function(Error, Version)
         if Version ~= CurrentVersion then
@@ -43,6 +45,21 @@ end)
 
 AddEventHandler('vRP:playerLeave', function(UserID, Player)
     TriggerClientEvent('Wolxy:IdentifyDead:RemovePlayer', -1, Player)
+
+    -- Bare for at være sikker:
+    local ToBeRemoved = {}
+    for k, v in pairs(IdentifyingPlayers) do
+        local Parts = {}
+        for Part in string.gmatch(k, "([^|]+)") do
+            table.insert(Parts, Part)
+        end
+        if Part[1] == Player then
+            table.insert(ToBeRemoved, k)
+        end
+    end
+    for _, v in pairs(ToBeRemoved) do
+        IdentifyingPlayers[v] = nil
+    end
 end)
 
 AddEventHandler('vRP:playerLeaveGroup', function(UserID)
@@ -67,20 +84,281 @@ function UpdatePlayerPerms(UserID, Player)
     TriggerClientEvent('Wolxy:IdentifyDead:HasPerm', Player, DoesPlayerHaveAccess(UserID))
 end
 
-RegisterNetEvent('Wolxy:IdentifyDead:Identify')
-AddEventHandler('Wolxy:IdentifyDead:Identify', function(Player2)
+RegisterNetEvent('Wolxy:IdentifyDead:Identifying')
+AddEventHandler('Wolxy:IdentifyDead:Identifying', function(Player2)
     local Player = source
     local UserID = vRP.getUserId({Player})
+    local UserID2 = vRP.getUserId({Player2})
+    
     if UserID ~= nil then
-        if DoesPlayerHaveAccess(UserID) then
-            
+        if UserID2 ~= nil then
+            vRPclient.isInComa(Player2, {}, function(InComa)
+                if InComa then
+                    if DoesPlayerHaveAccess(UserID) then
+                        local Key = Player .. '|' .. Player2
+                        if IdentifyingPlayers[Key] == nil then
+                            IdentifyingPlayers[Key] = {}
+                            SendNotification(Player, 'Identifying')
+                            if Config.General.InfoMode == 1 then
+                                vRP.getUserIdentity({UserID2, function(Identity)
+                                    IdentifyingPlayers[Key].Identity = Identity
+                                end})
+                            elseif Config.General.InfoMode == 2 then
+                                if CanOrCantBeIdentified[Player2] ~= false then
+                                    if CanOrCantBeIdentified[Player2] == true then
+                                        vRP.getUserIdentity({UserID2, function(Identity)
+                                            IdentifyingPlayers[Key].Identity = Identity
+                                        end})
+                                    else
+                                        if math.random() < (Config.General.InfoChance / 100) then
+                                            vRP.getUserIdentity({UserID2, function(Identity)
+                                                IdentifyingPlayers[Key].Identity = Identity
+                                            end})
+                                            CanOrCantBeIdentified[Player2] = true
+                                        else
+                                            CanOrCantBeIdentified[Player2] = false
+                                        end
+                                    end
+                                end
+                            elseif Config.General.InfoMode == 3 then
+                                local HasAny = false
+
+                                for _, v in pairs(Config.General.InfoItems) do
+                                    if vRP.getInventoryItemAmount({UserID2, v}) > 0 then
+                                        HasAny = true
+                                        break
+                                    end
+                                end
+
+                                if HasAny then
+                                    vRP.getUserIdentity({UserID2, function(Identity)
+                                        IdentifyingPlayers[Key].Identity = Identity
+                                    end})
+                                end
+                            elseif Config.General.InfoMode == 4 then
+                                HasDriversLicense(UserID2, function(HasDL)
+                                    if HasDL then
+                                        vRP.getUserIdentity({UserID2, function(Identity)
+                                            IdentifyingPlayers[Key].Identity = Identity
+                                        end})
+                                    end
+                                end)
+                            elseif Config.General.InfoMode == 5 then
+                                local HasAny = false
+
+                                for _, v in pairs(Config.General.InfoItems) do
+                                    if vRP.getInventoryItemAmount({UserID2, v}) > 0 then
+                                        HasAny = true
+                                        break
+                                    end
+                                end
+
+                                if HasAny then
+                                    vRP.getUserIdentity({UserID2, function(Identity)
+                                        IdentifyingPlayers[Key].Identity = Identity
+                                    end})
+                                else
+                                    HasDriversLicense(UserID2, function(HasDL)
+                                        if HasDL then
+                                            vRP.getUserIdentity({UserID2, function(Identity)
+                                                IdentifyingPlayers[Key].Identity = Identity
+                                            end})
+                                        end
+                                    end)
+                                end
+                            elseif Config.General.InfoMode == 6 then
+                                vRP.request({Player2, Config.General.TjekIDRequestTekst, Config.General.TjekIDRequestTime, function(Player3, HarID)
+                                    if IdentifyingPlayers[Key] ~= nil then
+                                        if HarID then
+                                            vRP.getUserIdentity({UserID2, function(Identity)
+                                                IdentifyingPlayers[Key].Identity = Identity
+                                            end})
+                                        end
+                                    end
+                                end})
+                            end
+        
+                            if Config.General.TjekPuls then
+                                if Config.General.TjekPulsMode == 1 then
+                                    vRP.request({Player2, Config.General.TjekPulsRequestTekst, Config.General.TjekPulsRequestTime, function(Player3, HarPuls)
+                                        if IdentifyingPlayers[Key] ~= nil then
+                                            if HarPuls ~= nil then
+                                                IdentifyingPlayers[Key].HarPuls = HarPuls
+                                                if IdentifyingPlayers[Key].HarPulsFunc ~= nil then
+                                                    IdentifyingPlayers[Key].HarPulsFunc()
+                                                end
+                                            else
+                                                SendNotification(Player, 'ServerError')
+                                            end
+                                        end
+                                    end})
+                                elseif Config.General.TjekPulsMode == 2 then
+                                    vRP.request({Player2, Config.General.TjekPulsRequestTekst, Config.General.TjekPulsRequestTime, function(Player3, HarPuls)
+                                        if IdentifyingPlayers[Key] ~= nil then
+                                            if HarPuls ~= nil then
+                                                if HarPuls then
+                                                    local TimesClosed = 0
+        
+                                                    local Menu = {
+                                                        name = Config.General.TjekPulsMenuHeaderTekst,
+                                                        css = {
+                                                            top = '75px',
+                                                            header_color = Config.General.TjekPulsMenuHeaderColor
+                                                        },
+                                                        onclose = function()
+                                                            TimesClosed = TimesClosed + 1
+                                                            if TimesClosed >= Config.General.TjekPulsMenuMaxClosesBeforeDefault then
+                                                                IdentifyingPlayers[Key].HarPuls = Config.General.TjekPulsDefaultPuls
+                                                                if IdentifyingPlayers[Key].HarPulsFunc ~= nil then
+                                                                    IdentifyingPlayers[Key].HarPulsFunc()
+                                                                end
+                                                                vRP.closeMenu({Player3})
+                                                            end
+                                                        end
+                                                    }
+        
+                                                    for _, v in pairs(Config.General.TjekPulsValues) do
+                                                        Menu[v] = {
+                                                            function(Player4, Valg)
+                                                                IdentifyingPlayers[Key].HarPuls = Valg
+                                                                if IdentifyingPlayers[Key].HarPulsFunc ~= nil then
+                                                                    IdentifyingPlayers[Key].HarPulsFunc()
+                                                                end
+                                                                vRP.closeMenu({Player4})
+                                                            end
+                                                        }
+                                                    end
+        
+                                                    vRP.openMenu({Player3, Menu})
+                                                else
+                                                    IdentifyingPlayers[Key].HarPuls = false
+                                                    if IdentifyingPlayers[Key].HarPulsFunc ~= nil then
+                                                        IdentifyingPlayers[Key].HarPulsFunc()
+                                                    end
+                                                end
+                                            else
+                                                SendNotification(Player, 'ServerError')
+                                            end
+                                        end
+                                    end})
+                                elseif Config.General.TjekPulsMode == 3 then
+                                    local TimesClosed = 0
+        
+                                    local Menu = {
+                                        name = Config.General.TjekPulsMenuHeaderTekst,
+                                        css = {
+                                            top = '75px',
+                                            header_color = Config.General.TjekPulsMenuHeaderColor
+                                        },
+                                        onclose = function()
+                                            TimesClosed = TimesClosed + 1
+                                            if TimesClosed >= Config.General.TjekPulsMenuMaxClosesBeforeDefault then
+                                                IdentifyingPlayers[Key].HarPuls = Config.General.TjekPulsDefaultPuls
+                                                if IdentifyingPlayers[Key].HarPulsFunc ~= nil then
+                                                    IdentifyingPlayers[Key].HarPulsFunc()
+                                                end
+                                                vRP.closeMenu({Player3})
+                                            end
+                                        end
+                                    }
+        
+                                    for _, v in pairs(Config.General.TjekPulsValues) do
+                                        Menu[v] = {
+                                            function(Player4, Valg)
+                                                IdentifyingPlayers[Key].HarPuls = Valg
+                                                if IdentifyingPlayers[Key].HarPulsFunc ~= nil then
+                                                    IdentifyingPlayers[Key].HarPulsFunc()
+                                                end
+                                                vRP.closeMenu({Player4})
+                                            end
+                                        }
+                                    end
+        
+                                    Menu['Ingen puls'] = {
+                                        function(Player4, Valg)
+                                            IdentifyingPlayers[Key].HarPuls = Valg
+                                            if IdentifyingPlayers[Key].HarPulsFunc ~= nil then
+                                                IdentifyingPlayers[Key].HarPulsFunc()
+                                            end
+                                            vRP.closeMenu({Player4})
+                                        end
+                                    }
+        
+                                    vRP.openMenu({Player3, Menu})
+                                elseif Config.General.TjekPulsMode == 4 then
+                                    vRP.prompt({player, Config.General.TjekPulsPromptName, Config.General.TjekPulsPromptDefault, function(Player4, Puls)
+                                        if Puls ~= nil then
+                                            IdentifyingPlayers[Key].HarPuls = Puls
+                                            if IdentifyingPlayers[Key].HarPulsFunc ~= nil then
+                                                IdentifyingPlayers[Key].HarPulsFunc()
+                                            end
+                                            vRP.closeMenu({Player4})
+                                        else
+                                            SendNotification(Player, 'ServerError')
+                                        end
+                                    end})
+                                end
+                            end
+                        else
+                            SendNotification(Player, 'ServerError')
+                        end
+                    else
+                        SendNotification(Player, 'NoPermission')
+                        TriggerClientEvent('Wolxy:IdentifyDead:HasPerm', Player, false)
+                    end
+                else
+                    SendNotification(Player, 'ServerError')
+                end
+            end)
         else
-            SendNotification(Player, 'NoPermission')
+            SendNotification(Player, 'ServerError')
         end
     else
         SendNotification(Player, 'ServerError')
     end
 end)
+
+RegisterNetEvent('Wolxy:IdentifyDead:Identify')
+AddEventHandler('Wolxy:IdentifyDead:Identify', function(Player2)
+    local Player = source
+    local UserID = vRP.getUserId({Player})
+    local UserID2 = vRP.getUserId({Player2})
+
+    if UserID ~= nil then
+        if UserID2 ~= nil then
+            if DoesPlayerHaveAccess(UserID) then
+                local Key = Player .. '|' .. Player2
+                if IdentifyingPlayers[Key] ~= nil then
+                    if IdentifyingPlayers[Key].Identity ~= nil then
+                        if IdentifyingPlayers[Key].HarPuls ~= nil then
+                            PlayerIdentifiedNotif(Player, Key, IdentifyingPlayers[Key].Identity, IdentifyingPlayers[Key].HarPuls)
+                        else
+                            IdentifyingPlayers[Key].HarPulsFunc = function()
+                                PlayerIdentifiedNotif(Player, Key, IdentifyingPlayers[Key].Identity, IdentifyingPlayers[Key].HarPuls)
+                            end
+                        end
+                    else
+                        SendNotification(Player, 'NoIDFound')
+                        IdentifyingPlayers[Key] = nil
+                    end
+                else
+                    SendNotification(Player, 'ServerError')
+                end
+            else
+                SendNotification(Player, 'NoPermission')
+                TriggerClientEvent('Wolxy:IdentifyDead:HasPerm', Player, false)
+            end
+        else
+            SendNotification(Player, 'ServerError')
+        end
+    else
+        SendNotification(Player, 'ServerError')
+    end
+end)
+
+function PlayerIdentifiedNotif(Player, Key, Identity, HarPuls)
+    
+end
 
 function SendNotification(Player, Notifikation)
     local Notifikation2 = Config.Notifikationer.Notifikationer[Notifikation]
@@ -108,6 +386,30 @@ function SendNotification(Player, Notifikation)
         })
     end
 end
+
+function HasDriversLicense(UserID, CB)
+    MySQL.query("vRP/dmv_search", {id = UserID}, function(Rows)
+        CB(#Rows > 0)
+    end)
+end
+
+function UpdateCanOrCantBeIdentified()
+    for k, v in pairs(CanOrCantBeIdentified) do
+        vRPclient.isInComa(k, {}, function(InComa)
+            if not InComa then
+                CanOrCantBeIdentified[k] = nil
+            end
+        end)
+    end
+
+    SetTimeout(5000, UpdateCanOrCantBeIdentified)
+end
+
+UpdateCanOrCantBeIdentified()
+
+-- Dont touch!
+IdentifyingPlayers = {}
+CanOrCantBeIdentified = {}
 
 
 
