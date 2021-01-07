@@ -6,6 +6,7 @@ Et [vRP](https://github.com/DunkoUK/dunko_vrp/) script der giver alle spillere (
 - Kan selv tjekke om du bruger den nyeste version. (Slået fra som standard så det ikke er træls.)
 - Giver spillere mulighed for at identificere døde spillere, dette kan også meget namt tilpasses så du kan vælge hvad information man kan få. Du kan også lave det tilfældigt om man finder noget eller baseret på om den døde spiller har et kørekort.
 - Giver spillere mulighed for at tjekke puls på døde spillere.
+- Understøtter flere notifikations systemer.
 
 ## Sådan bruger du
 Her er der instruktioner til at installere og konfigurere.
