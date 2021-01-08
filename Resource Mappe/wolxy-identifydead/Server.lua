@@ -7,7 +7,7 @@ local Proxy = module('vrp', 'lib/Proxy')
 vRP = Proxy.getInterface('vRP')
 vRPclient = Tunnel.getInterface('vRP', ResourceName)
 
-MySQL = module("vrp_mysql", "MySQL")
+MySQL = module('vrp_mysql', 'MySQL')
 
 if Config.General.CheckForUpdates then
     PerformHttpRequest('https://raw.githubusercontent.com/Wolxy/Wolxy-IdentifyDead/development/Version.md', function(Error, Version)
@@ -50,7 +50,7 @@ AddEventHandler('vRP:playerLeave', function(UserID, Player)
     local ToBeRemoved = {}
     for k, v in pairs(IdentifyingPlayers) do
         local Parts = {}
-        for Part in string.gmatch(k, "([^|]+)") do
+        for Part in string.gmatch(k, '([^|]+)') do
             table.insert(Parts, Part)
         end
         if Part[1] == Player then
@@ -102,17 +102,20 @@ AddEventHandler('Wolxy:IdentifyDead:Identifying', function(Player2)
                             if Config.General.InfoMode == 1 then
                                 vRP.getUserIdentity({UserID2, function(Identity)
                                     IdentifyingPlayers[Key].Identity = Identity
+                                    IdentifyingPlayers[Key].Job = vRP.getUserGroupByType({UserID2, 'job'})
                                 end})
                             elseif Config.General.InfoMode == 2 then
                                 if CanOrCantBeIdentified[Player2] ~= false then
                                     if CanOrCantBeIdentified[Player2] == true then
                                         vRP.getUserIdentity({UserID2, function(Identity)
                                             IdentifyingPlayers[Key].Identity = Identity
+                                            IdentifyingPlayers[Key].Job = vRP.getUserGroupByType({UserID2, 'job'})
                                         end})
                                     else
                                         if math.random() < (Config.General.InfoChance / 100) then
                                             vRP.getUserIdentity({UserID2, function(Identity)
                                                 IdentifyingPlayers[Key].Identity = Identity
+                                                IdentifyingPlayers[Key].Job = vRP.getUserGroupByType({UserID2, 'job'})
                                             end})
                                             CanOrCantBeIdentified[Player2] = true
                                         else
@@ -133,6 +136,7 @@ AddEventHandler('Wolxy:IdentifyDead:Identifying', function(Player2)
                                 if HasAny then
                                     vRP.getUserIdentity({UserID2, function(Identity)
                                         IdentifyingPlayers[Key].Identity = Identity
+                                        IdentifyingPlayers[Key].Job = vRP.getUserGroupByType({UserID2, 'job'})
                                     end})
                                 end
                             elseif Config.General.InfoMode == 4 then
@@ -140,6 +144,7 @@ AddEventHandler('Wolxy:IdentifyDead:Identifying', function(Player2)
                                     if HasDL then
                                         vRP.getUserIdentity({UserID2, function(Identity)
                                             IdentifyingPlayers[Key].Identity = Identity
+                                            IdentifyingPlayers[Key].Job = vRP.getUserGroupByType({UserID2, 'job'})
                                         end})
                                     end
                                 end)
@@ -156,12 +161,14 @@ AddEventHandler('Wolxy:IdentifyDead:Identifying', function(Player2)
                                 if HasAny then
                                     vRP.getUserIdentity({UserID2, function(Identity)
                                         IdentifyingPlayers[Key].Identity = Identity
+                                        IdentifyingPlayers[Key].Job = vRP.getUserGroupByType({UserID2, 'job'})
                                     end})
                                 else
                                     HasDriversLicense(UserID2, function(HasDL)
                                         if HasDL then
                                             vRP.getUserIdentity({UserID2, function(Identity)
                                                 IdentifyingPlayers[Key].Identity = Identity
+                                                IdentifyingPlayers[Key].Job = vRP.getUserGroupByType({UserID2, 'job'})
                                             end})
                                         end
                                     end)
@@ -172,6 +179,10 @@ AddEventHandler('Wolxy:IdentifyDead:Identifying', function(Player2)
                                         if HarID then
                                             vRP.getUserIdentity({UserID2, function(Identity)
                                                 IdentifyingPlayers[Key].Identity = Identity
+                                                IdentifyingPlayers[Key].Job = vRP.getUserGroupByType({UserID2, 'job'})
+                                                if IdentifyingPlayers[Key].IdentityFunc ~= nil then
+                                                    IdentifyingPlayers[Key].IdentityFunc()
+                                                end
                                             end})
                                         end
                                     end
@@ -331,15 +342,27 @@ AddEventHandler('Wolxy:IdentifyDead:Identify', function(Player2)
                 if IdentifyingPlayers[Key] ~= nil then
                     if IdentifyingPlayers[Key].Identity ~= nil then
                         if IdentifyingPlayers[Key].HarPuls ~= nil then
-                            PlayerIdentifiedNotif(Player, Key, IdentifyingPlayers[Key].Identity, IdentifyingPlayers[Key].HarPuls)
+                            PlayerIdentifiedNotif(Player, Key, IdentifyingPlayers[Key].Identity, IdentifyingPlayers[Key].Job, IdentifyingPlayers[Key].HarPuls)
                         else
                             IdentifyingPlayers[Key].HarPulsFunc = function()
-                                PlayerIdentifiedNotif(Player, Key, IdentifyingPlayers[Key].Identity, IdentifyingPlayers[Key].HarPuls)
+                                PlayerIdentifiedNotif(Player, Key, IdentifyingPlayers[Key].Identity, IdentifyingPlayers[Key].Job, IdentifyingPlayers[Key].HarPuls)
                             end
                         end
                     else
-                        SendNotification(Player, 'NoIDFound')
-                        IdentifyingPlayers[Key] = nil
+                        if Config.General.InfoMode == 6 then
+                            IdentifyingPlayers[Key].IdentityFunc = function()
+                                if IdentifyingPlayers[Key].HarPuls ~= nil then
+                                    PlayerIdentifiedNotif(Player, Key, IdentifyingPlayers[Key].Identity, IdentifyingPlayers[Key].Job, IdentifyingPlayers[Key].HarPuls)
+                                else
+                                    IdentifyingPlayers[Key].HarPulsFunc = function()
+                                        PlayerIdentifiedNotif(Player, Key, IdentifyingPlayers[Key].Identity, IdentifyingPlayers[Key].Job, IdentifyingPlayers[Key].HarPuls)
+                                    end
+                                end
+                            end
+                        else
+                            SendNotification(Player, 'NoIDFound')
+                            IdentifyingPlayers[Key] = nil
+                        end
                     end
                 else
                     SendNotification(Player, 'ServerError')
@@ -356,8 +379,41 @@ AddEventHandler('Wolxy:IdentifyDead:Identify', function(Player2)
     end
 end)
 
-function PlayerIdentifiedNotif(Player, Key, Identity, HarPuls)
-    
+function PlayerIdentifiedNotif(Player, Key, Identity, Job, HarPuls)
+    local Notifikation = Config.Notifikationer.Notifikationer.Identified
+
+    local Tekst = Config.General.InfoToShow
+    Tekst = string.gsub(Tekst, '{Fornavn}', Identity.firstname)
+    Tekst = string.gsub(Tekst, '{Efternavn}', Identity.name)
+    Tekst = string.gsub(Tekst, '{Telefon}', Identity.phone)
+    Tekst = string.gsub(Tekst, '{CPR}', Identity.registration)
+    Tekst = string.gsub(Tekst, '{Alder}', Identity.age)
+    Tekst = string.gsub(Tekst, '{Job}', Job)
+
+    local System = Notifikation.SystemOverride or Config.Notifikationer.System
+    System = string.lower(System)
+
+    if System == 'custom' then
+        TriggerClientEvent('Wolxy:IdentifyDead:Notif', Player, {
+            Tekst = Tekst,
+            Type = Notifikation.Type,
+            Location = Notifikation.Location,
+            Timeout = Notifikation.Timeout,
+            ProgressBar = Notifikation.ProgressBar
+        })
+    elseif System == 'pnotify' then
+        TriggerClientEvent('pNotify:SendNotification', Player, {
+            type = Notifikation.Type,
+            layout = Vars.Notifikationer.pNotify.Locations[Notifikation.Location],
+            text = Tekst,
+            timeout = Notifikation.Timeout,
+            progressBar = Notifikation.ProgressBar
+        })
+    elseif System == 'mythic_notify' or System == 'mythic' then
+        TriggerClientEvent('Wolxy:IdentifyDead:MythicNotif', Player, Vars.Notifikationer.Mythic.Types[Notifikation.Type], Notifikation.Timeout, Tekst)
+    else
+        SendNotification(Player, 'ServerError')
+    end
 end
 
 function SendNotification(Player, Notifikation)
@@ -388,10 +444,14 @@ function SendNotification(Player, Notifikation)
 end
 
 function HasDriversLicense(UserID, CB)
-    MySQL.query("vRP/dmv_search", {id = UserID}, function(Rows)
+    MySQL.query('vRP/dmv_search', {id = UserID}, function(Rows)
         CB(#Rows > 0)
     end)
 end
+
+-- Dont touch!
+IdentifyingPlayers = {}
+CanOrCantBeIdentified = {}
 
 function UpdateCanOrCantBeIdentified()
     for k, v in pairs(CanOrCantBeIdentified) do
@@ -406,10 +466,6 @@ function UpdateCanOrCantBeIdentified()
 end
 
 UpdateCanOrCantBeIdentified()
-
--- Dont touch!
-IdentifyingPlayers = {}
-CanOrCantBeIdentified = {}
 
 
 

@@ -93,11 +93,11 @@ Citizen.CreateThread(function()
                     SetTextColour(Config['3DText'].Color.R, Config['3DText'].Color.G, Config['3DText'].Color.B, Config['3DText'].Color.A)
                     SetTextCentre(true)
                     BeginTextCommandDisplayText('STRING')
-                    AddTextComponentSubstringPlayerName(string.gsub(Config['3DText'].Text, '{Knap}', string.gsub(GetControlInstructionalButton(0, Config.Button, true), 't_', '')))
+                    AddTextComponentSubstringPlayerName(string.gsub(Config['3DText'].Text, '{Knap}', string.gsub(GetControlInstructionalButton(0, Config.General.Button, true), 't_', '')))
                     EndTextCommandDisplayText(X2, Y2)
                 end
                 if not IsChecking then
-                    if IsControlJustPressed(0, Config.CheckDeathCause.Button) then
+                    if IsControlJustPressed(0, Config.General.Button) then
                         IsChecking = true
                         IdentifyDead(ClosestDeadPlayer.Coords, ClosestDeadPlayer.Player, ClosestDeadPlayer.Distance)
                     end
@@ -112,7 +112,7 @@ function IdentifyDead(Coords2, Player, Distance)
     local Ped = PlayerPedId()
     local Coords = GetEntityCoords(Ped)
 
-    TriggerServerEvent('Wolxy:IdentifyDead:Identifying')
+    TriggerServerEvent('Wolxy:IdentifyDead:Identifying', Player)
 
     TaskAchieveHeading(Ped, math.deg(math.atan(Coords.x - Coords2.x, Coords.y - Coords2.y)) % 360, 1500)
 

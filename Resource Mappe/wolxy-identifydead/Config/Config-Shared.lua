@@ -2,14 +2,14 @@ Config = {
     ['General'] = { -- Basic ting i scriptet som jeg ikke kunne finde en anden kategori til.
         CheckForUpdates = true, -- Om scriptet skal tjekke om du bruger den nyeste version ved script start.
         PermissionRequired = nil, -- Den permission man skal have for at tjekke identitet og puls. Sæt til nil hvis alle spillere skal kunne.
-        InfoToShow = 'Navn: {Fornavn} {Efternavn}<br>CPR: {CPR}<br>Alder: {Alder}', -- Hvad der skal stå når man undersøger en død spiller. Se under Config for at se alle placeholders. Skriv <br> for at lave en ny linje. Der vil blive tilføjet en linje mere hvis TjekPuls er slået til.
+        InfoToShow = 'Navn: {Fornavn} {Efternavn}<br>Tlf.: {Telefon}<br>CPR: {CPR}<br>Alder: {Alder}<br>Job: {Job}', -- Hvad der skal stå når man undersøger en død spiller. Se under Config for at se alle placeholders. Skriv <br> for at lave en ny linje. Der vil blive tilføjet en linje mere hvis TjekPuls er slået til.
         InfoMode = 1, -- Hvordan identificering skal fungere og hvornår man kan. Se under Config for at se alle modes og forklaringer.
         InfoChance = 75, -- Hvor stor en chance man har for at kunne identificere en person. Dette virker kun hvis InfoMode er sat til 2.
         InfoItems = { -- De items en død person skal have på sig før man kan identificere dem (det er kun nødvendigt at de 1 en de følgende items på sig). Dette virker kun hvis InfoMode er sat til 3. Kunne måske være brugbart hvis din server har et item til sygesikringskort.
             'idkort'
         },
         TjekIDRequestTekst = 'Har du noget identificerende på dig?', -- Den tekst der skal stå når en død spiller bliver spurgt om de har noget identificerende på sig. (Bliver kun brugt hvis InfoMode er 6)
-        TjekIDRequestTime = 10, -- Hvor mange sekunder den døde spiller skal have når han / hun bliver spurgt om de har noget identificerende på sig. (Bliver kun brugt hvis InfoMode er 6)
+        TjekIDRequestTime = 15, -- Hvor mange sekunder den døde spiller skal have når han / hun bliver spurgt om de har noget identificerende på sig. (Bliver kun brugt hvis InfoMode er 6)
         TjekPuls = true, -- Om den døde spiller skal spørges om han / hun har puls. Dette vil blive vist til den der undersøger hvis denne indstilling er true.
         TjekPulsMode = 1, -- Hvordan den døde spilller skal spørges om puls, og hvor mange detaljer han / hun skal give. Se under Config for en forklaring af alle modes.
         TjekPulsRequestTekst = 'Har du puls?', -- Hvilken tekst der skal stå når den døde spiller bliver spurgt om de har puls. (Bliver kun brugt hvis TjekPuls er true)
@@ -41,7 +41,7 @@ Config = {
         Text = 'Tryk på ~b~{Knap}~s~ for at finde identitet og tjekke puls.', -- Det tekst der skal stå over den nærmeste døde spiller. "{Knap}" bliver automatisk ændret til den knap der er valgt under ['General'].
     },
     ['Notifikationer'] = { -- Indstillinger for notifikationer.
-        System = 'Custom', -- Hvilket system der skal bruges til notifikationer. Se under Config for en liste over understøttede systemer.
+        System = 'pNotify', -- Hvilket system der skal bruges til notifikationer. Se under Config for en liste over understøttede systemer.
         Notifikationer = { -- Alle notifikationer
             ServerError = { -- Notifikation til en spilelr hvis der opstod en server fejl.
                 Tekst = 'Der opstod en server fejl, prøv venligst igen senere.', -- Teksten der skal stå i notifikationen.
@@ -77,7 +77,7 @@ Config = {
                 Location = 'BR', -- Lokation af notifikationen på skærmen. Se under Config for en forklaring. (Virker ikke til GTA notifikationer eller mythic_notify notifikationer)
                 ProgressBar = true, -- Om der skal være en "progress bar" der viser hvornår notifikationen forsvinder. (Virker ikke til GTA notifikationer eller mythic_notify notifikationer)
                 Important = true, -- Om notifikationen skal blinke når den kommer. (Virker kun til GTA notifikationer)
-                SystemOverride = 'Custom' -- Denne notifikation understøtter kun mythic_notify, pNotify og Custom.
+                SystemOverride = 'pNotify' -- Denne notifikation understøtter kun mythic_notify, pNotify og Custom.
             },
             NoIDFound = { -- Notifikation til spillere der har prøvet at identificere en spiller som ikke kan identificeres.
                 Tekst = 'Intet identificerende fundet!', -- Teksten der skal stå i notifikationen.
@@ -101,8 +101,10 @@ Config = {
     Alle placeholders:
         {Fornavn}: Den døde spillers karakters fornavn.
         {Efternavn}: Den døde spillers karakters efternavn.
+        {Telefon}: Den døde spillers karakters telefon nummer.
         {CPR}: Den døde spillers karakters CPR nummer.
-        {Alder} Den døde spillers karakters alder.
+        {Alder}: Den døde spillers karakters alder.
+        {Job}: Den døde spillers karakters job.
 ]]--
 
 --[[
